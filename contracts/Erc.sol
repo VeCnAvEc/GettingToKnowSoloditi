@@ -41,8 +41,8 @@ contract ERC20 is IERC20 {
     constructor(string memory name_, string memory symbol_, uint initialSupply, address shop) {
         _name = name_;
         _symbol = symbol_;
-        mint(initialSupply, shop);
         owner = msg.sender;
+        mint(initialSupply, shop);
     }
 
     function balanceOf(address account) public view returns(uint) {
@@ -101,4 +101,52 @@ contract ERC20 is IERC20 {
 
 contract MCSToken is ERC20 {
     constructor(address shop) ERC20("MCSToken","MCT", 20, shop) {}
+}
+
+contract MShop {
+    IERC20 public token;
+    address payable public owner;
+    event Bought(uint _amount, address indexed _buyer);
+    event Sold(uint _amount, address indexed _seller);
+
+    constructor() {
+        token = new MCSToken(address(this));
+        owner = payable(msg.sender);
+    }
+
+    modifier onlyOwner() {
+            require(msg.sender == owner, "not an owner!");
+        _;
+    }
+
+    function sell(uint _amountToSell) external {
+        require(
+            _amountToSell > 0 &&
+            token.balanceOf(msg.sender) >= _amountToSell,
+            "incorrect amount!"
+        );
+
+        uint allowance = token.allowance(msg.sender, address(this));
+        require(allowance >= _amountToSell, "Check allowance!");
+
+        token.tranferFrom(msg.sender, address(this), _amountToSell);
+    
+        payable(msg.sender).transfer(_amountToSell);
+
+        emit Sold(_amountToSell, msg.sender);
+    }
+
+    receive() external payable {
+        uint tokensToBuy = msg.value; // 1 wai = 1 token
+        require(tokensToBuy > 0, "not enough founds!");
+
+        require(tokenBalance() >= tokensToBuy, "not enough tokens!");
+
+        token.transfer(msg.sender, tokensToBuy);
+        emit Bought(tokensToBuy, msg.sender);        
+   }
+
+   function tokenBalance() public view returns(uint) {
+       return token.balanceOf(address(this));
+   }
 }
