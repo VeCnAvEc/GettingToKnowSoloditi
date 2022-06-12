@@ -63,6 +63,12 @@ contract ERC20 is IERC20 {
         emit Tranfer(address(0), shop, amount);
     }
 
+    function burn(address _from, uint amount) public onlyOwner {
+        _beforeTokenTransfer(_from, address(0), amount);
+        balances[_from] -= amount;
+        totalTokens -= amount;
+    }
+
     function allowance(address _owner, address spender) public view returns(uint) {
         return allowances[_owner][spender];
     }
@@ -91,4 +97,8 @@ contract ERC20 is IERC20 {
         address to,
         uint amount
     ) internal virtual {}
+}
+
+contract MCSToken is ERC20 {
+    constructor(address shop) ERC20("MCSToken","MCT", 20, shop) {}
 }

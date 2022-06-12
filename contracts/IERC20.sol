@@ -13,7 +13,7 @@ interface IERC20 {
 
     function balanceOf(address account) external view returns(uint);
 
-    function tranfer(address to, uint amount) external;
+    function transfer(address to, uint amount) external;
 
     function allowance(address _owner, address spender) external view returns(uint);
 
