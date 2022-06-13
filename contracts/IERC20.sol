@@ -3,11 +3,11 @@
 pragma solidity ^0.8.0;
 
 interface IERC20 {
-    function name () external view returns(string memory);
+    function name() external view returns(string memory);
 
     function symbol() external view returns(string memory);
 
-    function decimals() external pure returns(uint);
+    function decimals() external pure returns(uint); // 0
 
     function totalSupply() external view returns(uint);
 
@@ -19,9 +19,9 @@ interface IERC20 {
 
     function approve(address spender, uint amount) external;
 
-    function tranferFrom(address sender, address recipient, uint amount) external;
+    function transferFrom(address sender, address recipient, uint amount) external;
 
-    event Tranfer(address indexed from, address indexed to, uint amount);
+    event Transfer(address indexed from, address indexed to, uint amount);
 
     event Approve(address indexed owner, address indexed to, uint amount);
-}
+} 

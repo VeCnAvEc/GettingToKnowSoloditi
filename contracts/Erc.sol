@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "./IERC20.sol";
 
-contract ERC20 is IERC20 {
+contract ERC20 {
     uint totalTokens;
     address owner;
     mapping(address => uint) balances;
@@ -12,7 +12,7 @@ contract ERC20 is IERC20 {
     string _name;
     string _symbol;
 
-    function name () external view returns(string memory) {
+    function name() external view returns(string memory) {
         return _name;
     }
 
@@ -21,7 +21,7 @@ contract ERC20 is IERC20 {
     }
 
     function decimals() external pure returns(uint) {
-        return 18; // 1 token === 1 vai
+        return 18; // 1 token = 1 wei
     }
 
     function totalSupply() external view returns(uint) {
@@ -34,9 +34,13 @@ contract ERC20 is IERC20 {
     }
 
     modifier onlyOwner() {
-            require(msg.sender == owner, "not an owner!");
+        require(msg.sender == owner, "not an owner!");
         _;
     }
+
+    event Transfer(address indexed from, address indexed to, uint amount);
+
+    event Approve(address indexed owner, address indexed to, uint amount);
 
     constructor(string memory name_, string memory symbol_, uint initialSupply, address shop) {
         _name = name_;
@@ -49,18 +53,18 @@ contract ERC20 is IERC20 {
         return balances[account];
     }
 
-    function transfer(address to, uint amount) external enoughTokens(msg.sender, amount){
+    function transfer(address to, uint amount) external enoughTokens(msg.sender, amount) {
         _beforeTokenTransfer(msg.sender, to, amount);
-        balances[msg.sender] -= amount;   
-        balances[to] += amount;   
-        emit Tranfer(msg.sender, to, amount);
+        balances[msg.sender] -= amount;
+        balances[to] += amount;
+        emit Transfer(msg.sender, to, amount);
     }
 
     function mint(uint amount, address shop) public onlyOwner {
-        _beforeTokenTransfer(address(0), shop, amount);        
+        _beforeTokenTransfer(address(0), shop, amount);
         balances[shop] += amount;
         totalTokens += amount;
-        emit Tranfer(address(0), shop, amount);
+        emit Transfer(address(0), shop, amount);
     }
 
     function burn(address _from, uint amount) public onlyOwner {
@@ -82,14 +86,14 @@ contract ERC20 is IERC20 {
         emit Approve(sender, spender, amount);
     }
 
-    function tranferFrom(address sender, address recipient, uint amount) public enoughTokens(sender,amount) {
+    function transferFrom(address sender, address recipient, uint amount) public enoughTokens(sender, amount) {
         _beforeTokenTransfer(sender, recipient, amount);
-        // require(allowances[sender][recipient] >= amount, "chaeck allowance!");
-        allowances[sender][recipient] -= amount;
+        //require(allowances[sender][recipient] >= amount, "check allowance!");
+        allowances[sender][recipient] -= amount; // error!
 
         balances[sender] -= amount;
         balances[recipient] += amount;
-        emit Tranfer(sender, recipient, amount);
+        emit Transfer(sender, recipient, amount);
     }
 
     function _beforeTokenTransfer(
@@ -100,11 +104,11 @@ contract ERC20 is IERC20 {
 }
 
 contract MCSToken is ERC20 {
-    constructor(address shop) ERC20("MCSToken","MCT", 20, shop) {}
+    constructor(address shop) ERC20("MCSToken", "MCT", 20, shop) {}
 }
 
 contract MShop {
-    IERC20 public token;
+    ERC20 public token;
     address payable public owner;
     event Bought(uint _amount, address indexed _buyer);
     event Sold(uint _amount, address indexed _seller);
@@ -115,7 +119,7 @@ contract MShop {
     }
 
     modifier onlyOwner() {
-            require(msg.sender == owner, "not an owner!");
+        require(msg.sender == owner, "not an owner!");
         _;
     }
 
@@ -127,26 +131,26 @@ contract MShop {
         );
 
         uint allowance = token.allowance(msg.sender, address(this));
-        require(allowance >= _amountToSell, "Check allowance!");
+        require(allowance >= _amountToSell, "check allowance!");
 
-        token.tranferFrom(msg.sender, address(this), _amountToSell);
-    
+        token.transferFrom(msg.sender, address(this), _amountToSell);
+
         payable(msg.sender).transfer(_amountToSell);
 
         emit Sold(_amountToSell, msg.sender);
     }
 
     receive() external payable {
-        uint tokensToBuy = msg.value; // 1 wai = 1 token
-        require(tokensToBuy > 0, "not enough founds!");
+        uint tokensToBuy = msg.value; // 1 wei = 1 token
+        require(tokensToBuy > 0, "not enough funds!");
 
         require(tokenBalance() >= tokensToBuy, "not enough tokens!");
 
         token.transfer(msg.sender, tokensToBuy);
-        emit Bought(tokensToBuy, msg.sender);        
-   }
+        emit Bought(tokensToBuy, msg.sender);
+    }
 
-   function tokenBalance() public view returns(uint) {
-       return token.balanceOf(address(this));
-   }
-}
+    function tokenBalance() public view returns(uint) {
+        return token.balanceOf(address(this));
+    }
+} 
